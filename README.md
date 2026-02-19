@@ -1,6 +1,6 @@
 # WDK Agent Skills
 
-[Agent skills](https://agentskills.io) for non-custodial multi-chain wallet operations using the [Tether Wallet Development Kit (WDK)](https://wallet.tether.io/).
+[Agent skills](https://agentskills.io) for non-custodial multi-chain wallet operations using the [Tether Wallet Development Kit (WDK)](https://wdk.tether.io/).
 
 This repository follows the open [Agent Skills](https://agentskills.io/specification) format, a simple standard for giving AI agents new capabilities and domain expertise.
 
@@ -39,8 +39,7 @@ Skills are automatically available once installed. Example prompts:
 
 ## Documentation
 
-- **WDK Docs**: [docs.wallet.tether.io](https://docs.wallet.tether.io)
-- **WDK Core**: [github.com/tetherto/wdk-core](https://github.com/tetherto/wdk-core)
+- **WDK Agent Skills Guide**: [docs.wdk.tether.io/ai/agent-skills](https://docs.wdk.tether.io/ai/agent-skills)
 - **Agent Skills Specification**: [agentskills.io](https://agentskills.io)
 
 ## Contributing
