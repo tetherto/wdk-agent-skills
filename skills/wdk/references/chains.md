@@ -1,14 +1,5 @@
 # Chain & Unit Reference
 
-## Contents
-- [Chains, Native Tokens & Base Units](#chains-native-tokens--base-units)
-- [Public RPC Endpoints](#public-rpc-endpoints)
-- [Common Token Decimals](#common-token-decimals)
-- [EIP-3009 Support (Gasless Transfers)](#eip-3009-support-gasless-transfers)
-- [Address Format Validation](#address-format-validation)
-- [Dust Thresholds](#dust-thresholds)
-- [WDK Bridge Supported Routes](#wdk-bridge-supported-routes)
-
 ## Chains, Native Tokens & Base Units
 
 | Chain | Chain ID | Native Token | Base Unit | Decimals | 1 Token = |
@@ -35,7 +26,7 @@
 | **HyperEVM** | 999 | HYPE | wei | 18 | 10^18 wei |
 | **MegaETH** | 4326 | ETH | wei | 18 | 10^18 wei |
 | **Monad** | 143 | MON | wei | 18 | 10^18 wei |
-| **Stable** | 988 | gUSDT | wei | 18 | 10^18 wei |
+| **Stable** | 988 | USD₮ | wei | 18 | 10^18 wei |
 | **Conflux eSpace** | 1030 | CFX | wei | 18 | 10^18 wei |
 | **Solana** | — | SOL | lamport | 9 | 1,000,000,000 lamports |
 | **Spark** | — | BTC | satoshi | 8 | 100,000,000 sats |
@@ -71,7 +62,7 @@ Default public RPCs for chains listed above. All are rate-limited — use a prov
 | **HyperEVM** | 999 | `https://rpc.hyperliquid.xyz/evm` | ⚠️ 100 req/min limit |
 | **MegaETH** | 4326 | `https://mainnet.megaeth.com/rpc` | Official MegaETH |
 | **Monad** | 143 | `https://rpc.monad.xyz` | Also: `https://monad-mainnet.drpc.org` |
-| **Stable** | 988 | `https://rpc.stable.xyz` | Gas paid in gUSDT |
+| **Stable** | 988 | `https://rpc.stable.xyz` | Gas paid in USD₮ |
 | **Conflux eSpace** | 1030 | `https://evm.confluxrpc.com` | Official Confura; free tier rate-limited |
 
 ### Non-EVM Chains

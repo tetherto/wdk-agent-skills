@@ -23,7 +23,7 @@ import WalletManagerSolana from '@tetherto/wdk-wallet-solana'
 
 ## Key Details
 
-- **Derivation**: BIP-44 (`m/44'/501'/{index}'/0'`)
+- **Derivation**: BIP-44 (`m/44'/501'/0'/0/{index}`)
 - **Key type**: Ed25519
 - **Fee unit**: lamports (1 SOL = 1,000,000,000 lamports)
 - **Token standard**: SPL tokens via `transfer()`
@@ -34,12 +34,10 @@ import WalletManagerSolana from '@tetherto/wdk-wallet-solana'
 
 ```javascript
 const wallet = new WalletManagerSolana(seedPhrase, {
-  rpcUrl: 'https://api.mainnet-beta.solana.com',
-  transferMaxFee: 10000000  // Optional max fee in lamports
+  provider: 'https://api.mainnet-beta.solana.com',
+  transferMaxFee: 100000000n  // Optional max fee in lamports
 })
 ```
-
-> **Derivation path change in v1.0.0-beta.4+**: Previous default was `m/44'/501'/0'/0/{index}`, updated to match ecosystem conventions. Use `getAccountByPath` for legacy wallet recovery.
 
 ## Chain-Specific Behavior
 
