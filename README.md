@@ -16,7 +16,7 @@ The `wdk` skill gives agents the knowledge to:
 
 - **Wallet management** — Create and manage wallets on Bitcoin, EVM chains, Solana, Spark, TON, and TRON
 - **Token transfers** — Send USDt and other tokens across supported chains
-- **DEX swaps** — Execute token swaps via Velora (EVM) and StonFi (TON)
+- **DEX swaps** — Execute token swaps via Velora (EVM)
 - **Cross-chain bridging** — Bridge USDt0 across chains via LayerZero
 - **DeFi lending** — Supply, withdraw, borrow, and repay through Aave V3
 - **Fiat on/off ramps** — Buy and sell crypto via MoonPay
