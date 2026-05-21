@@ -91,11 +91,12 @@ Sign and submit each `actions[].tx` in order. The `currentActionIndex` indicates
 **With WDK wallet:**
 ```javascript
 for (const action of txResponse.actions) {
-  await evmAccount.sendTransaction({
+  const tx = await evmAccount.sendTransaction({
     to: action.tx.to,
     value: BigInt(action.tx.value || '0'),
     data: action.tx.data
   })
+  await tx.wait() // wait for confirmation before sending the next action
 }
 ```
 

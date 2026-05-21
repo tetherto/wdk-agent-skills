@@ -116,6 +116,7 @@ Returns current TVL in USD and native token units.
 ```
 GET /v2/networks
 ```
+**SDK:** `await sdk.getNetworks()`
 
 ```bash
 curl "https://api.vaults.fyi/v2/networks" \
