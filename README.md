@@ -9,6 +9,7 @@ This repository follows the open [Agent Skills](https://agentskills.io/specifica
 | Skill | Description |
 |-------|-------------|
 | `wdk` | Tether Wallet Development Kit — build and interact with non-custodial multi-chain wallets |
+| `wdk-review-tests` | Review WDK test suites for compliance with established testing conventions |
 
 ### WDK Capabilities
 
