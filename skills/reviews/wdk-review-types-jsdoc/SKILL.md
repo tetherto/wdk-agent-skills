@@ -549,15 +549,15 @@ When the same `Pick` is used in multiple places, lift it to a named typedef.
 
 ## Type Definition Conventions
 
-### TD1. Run `npm run build:types` before committing after API changes
+### TD1. Update `.d.ts` manually after API changes — do not run `npm run build:types`
 
-After modifying public JSDoc, run `npm run build:types` (`tsc`) to regenerate `.d.ts`. Commit the updated type files alongside the source changes.
+After modifying public JSDoc, **do not** run `npm run build:types` (`tsc`). Instead, hand-edit the affected `.d.ts` files so they reflect the JSDoc/type changes, and commit the updated type files alongside the source changes. Only touch the declarations that actually changed.
 
 ---
 
 ### TD2. Update `types/index.d.ts` when adding new public types
 
-Every new `@typedef` that's part of the public API must appear in the generated `types/index.d.ts`. Verify after `build:types`.
+Every new `@typedef` that's part of the public API must appear in `types/index.d.ts`. Add the corresponding declaration manually (see TD1).
 
 ---
 
@@ -608,9 +608,9 @@ JSDoc `@abstract` classes must generate `abstract class` declarations.
 
 ---
 
-### TD9. Regenerate `.d.ts` after addressing review changes
+### TD9. Update `.d.ts` manually after addressing review changes
 
-After resolving review feedback that touches JSDoc or type annotations, re-run `npm run build:types` and include the updated `.d.ts` files in the follow-up commit.
+After resolving review feedback that touches JSDoc or type annotations, hand-edit the affected `.d.ts` files (do not run `npm run build:types`) and include the updated declarations in the follow-up commit.
 
 ---
 
@@ -624,4 +624,4 @@ After resolving review feedback that touches JSDoc or type annotations, re-run `
 6. **Type annotations** — `x[]` not `Array<x>` (R12); precision ladder (R13); SDK types preferred (R14, R15); discriminated unions (R20); typedef for structured returns (R22); typedef for inline `@type` on properties (R25); `undefined` not `null` for cached props (R26); `Pick<Config>` not `Partial<Config>` (R31).
 7. **Completeness** — meaningful descriptions on every documented field (R28); `| null` when applicable (R16); `@throws` for errors (R17); `@see` for docs (R18).
 8. **Naming** — no impl-detail prefixes (R29); SDK-aligned casing (R30); overload-specific param names (R27).
-9. **`.d.ts` alignment** — runtime types match (R23); `build:types` after changes (TD1, TD9); public types exported (TD2-TD5); internal excluded (TD6); interface/abstract correct (TD7-TD8); diff `types/` after regen.
+9. **`.d.ts` alignment** — runtime types match (R23); update `.d.ts` manually, never `build:types` (TD1, TD9); public types exported (TD2-TD5); internal excluded (TD6); interface/abstract correct (TD7-TD8); review the `types/` edits for correctness.
