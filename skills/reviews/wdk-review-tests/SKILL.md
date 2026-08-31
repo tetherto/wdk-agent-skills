@@ -75,9 +75,21 @@ expect(mockClient.disconnect).toHaveBeenCalled()   // disconnect() takes no args
 
 ---
 
-### R3. One unit per unit test
+### R3. One unit per test — and no redundant tests or assertions
 
 Each unit test must exercise exactly one method of the system under test. A test that calls `sign()` and then passes the result to `verify()` is an integration test. Hardcode the expected signature instead.
+
+The converse also holds: merge test cases that cover the same scenario; delete weak type/shape assertions subsumed by a stronger exact-value assertion; drop assertions whose failure is already implied by a later step (e.g., checking a returned `hash` looks valid before fetching the transaction by that hash); don't re-test inherited methods in subclass suites; don't repeat unit-covered assertions (paths, key-pair shapes, indexes) in integration tests.
+
+When such a test is valuable end-to-end, move it to `tests/integration/` (for modules that have them) instead of deleting it — and keep a unit test that constructs the intermediate input manually. Helper functions from the underlying SDK (not the SUT) may be used to build that input (e.g., build the signed cell with ton SDK utilities rather than calling `signTransaction()`).
+
+**Violation (redundant assertions):**
+```javascript
+const signedTx = await account.signTransaction(TRANSACTION)
+expect(typeof signedTx).toBe('string')          // implied by the broadcast below
+expect(signedTx.startsWith('0x')).toBe(true)    // implied by the broadcast below
+const hash = await provider.send('eth_sendRawTransaction', [signedTx])
+```
 
 **Violation:**
 ```javascript
@@ -202,6 +214,15 @@ Every new public method added in a PR must have corresponding unit tests. Flag a
 
 When a method accepts optional parameters (`limit`, `offset`, `direction`, `confirmationTarget`, etc.), there must be test cases covering those variants. Edge cases like null returns and boundary values must also be covered.
 
+Coverage stops at the documented contract. Do not test inputs the method's contract disallows or that the parameter types already exclude (e.g., `null` where the parameter is typed as a string) — the no-defensive-programming rule applies to tests too. Flag such tests for removal. Inputs whose rejection IS part of the documented contract (a `@throws` condition, e.g. an empty or blank string where the doc says it throws) still require tests per R5/R11 — only inputs excluded by the parameter types or disallowed by the contract are off-limits.
+
+**Violation:**
+```javascript
+test('should throw when the signer name is not a string', () => {
+  expect(() => wallet.addSigner(null, signer)).toThrow('Signer name is required.')
+})   // the contract types name as a string — this case can't occur
+```
+
 ---
 
 ## Test Data Conventions
@@ -215,6 +236,8 @@ When a method accepts optional parameters (`limit`, `offset`, `direction`, `conf
 Test fixtures must use realistic values that match actual SDK types. Property names must match the real type definitions.
 
 Violation: using `{ address: '0x...' }` when the real type defines `{ depositAddress: '0x...' }`.
+
+In integration tests, use a distinct hardcoded external address as the transaction recipient (e.g., `to: 'TCmGCGFR8ApgtEoq2kpHUgWDCFPrktxPD2'`) instead of reusing another derived account of the wallet under test — unless the recipient's balance is itself under test.
 
 ### Seed phrases
 Use realistic BIP-39 seed phrases, not trivially repeated words:
@@ -252,6 +275,10 @@ test('should return balance', async () => {
 })
 ```
 
+Do not save and restore globally mocked functions (e.g., `global.fetch`) in unit tests — the real implementation is never used, so `afterEach` teardown that restores it is dead code.
+
+Implement test doubles for interfaces as plain dummy classes (`class DummySigner { derive () { return this } async getAddress () { return 'dummy-address' } dispose () {} }`), not factory functions returning jest-mock object literals.
+
 ### Test naming
 - Describe behavior, not implementation: `'should close and clean up connections'`, not `'should call wallet.cleanupConnections'`.
 - Top-level `describe` uses the module name: `describe('@wdk/wallet-evm', () => { ... })`.
@@ -276,6 +303,10 @@ test('should return balance', async () => {
 - Use hardhat to fork a testnet at a known block number — never run against a live testnet.
 - Minimize required environment variables — use internally set values where possible.
 - Integration tests must be atomic: one scenario per test.
+- Commit precompiled contract artifacts (`tests/artifacts/*.json`) — never compile contracts at test time.
+- Prefer node tooling that minimizes custom config (hardhat-equivalents like tronbox/TRE, `solana-test-validator`) over hand-configured docker nodes.
+- Start test infrastructure programmatically from a jest setup script — not via npm-script orchestration (`concurrently -k ... 'npm run rpc' 'jest ...'`).
+- Do environment prep (e.g., funding test accounts) in the shared setup helper, not in per-file `beforeAll` hooks.
 
 ### Structure
 - Each integration test implements a complete scenario in its own `test()` block.
@@ -295,12 +326,12 @@ test('should return balance', async () => {
 
 1. **Assertions** — flag `typeof`, `toBeDefined`, `toBeGreaterThan`, `toMatch`, `expect.any()`, or missing `toHaveBeenCalledWith` arguments (R1, R2). `toBeUndefined()` is acceptable.
 2. **Mock boundaries** — only external-facing methods mocked; pure functions use real implementations (R9).
-3. **Test isolation** — each test exercises one method (R3); hooks don't call the SUT (R8); state reset per-test.
+3. **Test isolation** — each test exercises one method, and duplicate tests / subsumed assertions are removed (R3); hooks don't call the SUT (R8); state reset per-test.
 4. **Public API only** — no tests of internals; no access to `_private` properties (R4).
 5. **Errors** — `.rejects.toThrow()` always includes a message or regex (R5).
 6. **Return-value coverage** — every relevant field on returned objects is asserted (R6).
 7. **Equality** — `toBe` for primitives, `toEqual` only for deep objects/arrays (R7).
-8. **Coverage** — every new public method has tests (R10); parameter variants and edge cases covered (R11).
+8. **Coverage** — every new public method has tests (R10); parameter variants and edge cases covered, but nothing beyond the documented contract (R11).
 9. **Test data** — `DUMMY_`/`SCREAMING_CASE` naming, `dummy-` (not `mock-`) for placeholder strings, realistic SDK-shaped fixtures, real BIP-39 seed phrases.
-10. **Structure** — `tests/` directory, lifecycle hooks used correctly, constants scoped to where they're used, top-level mock refs configured per-test.
-11. **Integration** — hardhat fork at known block, one scenario per test, independent on-chain verification, all fields asserted.
+10. **Structure** — `tests/` directory, lifecycle hooks used correctly, constants scoped to where they're used, top-level mock refs configured per-test, no global-mock teardown, dummy classes (not factories) for interface doubles.
+11. **Integration** — hardhat fork at known block, committed artifacts, infra started from jest setup, one scenario per test, independent on-chain verification, all fields asserted, distinct external recipient address.
