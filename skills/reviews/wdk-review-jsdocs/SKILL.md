@@ -1,11 +1,11 @@
 ---
-name: wdk-review-types-jsdoc
-description: Review WDK source files for compliance with established Types & JSDoc conventions (JSDoc format, type annotations, import/export rules, .d.ts alignment).
+name: wdk-review-jsdocs
+description: Review WDK source files for JSDoc format and type-annotation conventions (JSDoc blocks, tags, type precision, imports/exports, naming).
 user-invocable: true
 argument-hint: "[file or directory path to source files]"
 ---
 
-# WDK Types & JSDoc Review
+# WDK JSDoc & Type Annotation Review
 
 Review the source files at the provided path (or the current project's `src/` directory if none given). Apply all rules below.
 
@@ -53,14 +53,17 @@ Tags like `@param`, `@returns`, `@type` must not appear before the description.
 
 ---
 
-### R2. Use `{Object}` (capitalized) as the kind-marker in `@typedef` declarations, not `{object}`
+### R2. Use `{Object}` (capitalized) in `@typedef` kind-markers and `@template` constraints, not `{object}`
 
 ```javascript
 /** @typedef {object} GetBalanceResult */     // wrong — use Object as the kind-marker
 /** @typedef {Object} GetBalanceResult */     // correct
+
+/** @template {object} TSchema */             // wrong
+/** @template {Object} TSchema */             // correct — consistent with all other WDK modules
 ```
 
-This applies only to `@typedef` kind-markers. Using `{Object}` as a value type in `@param`, `@property`, `@returns`, or `@type` is forbidden — see R13.
+This applies only to `@typedef` kind-markers and `@template` constraints. Using `{Object}` as a value type in `@param`, `@property`, `@returns`, or `@type` is forbidden — see R13 (the single-use options-bag pattern in R25 is the one exception).
 
 ---
 
@@ -80,6 +83,13 @@ Every `@param` and `@property` tag must have a dash between the name and the des
 ```javascript
 @param {number} [timeout=15000] - Connection timeout.                      // wrong
 @param {number} [timeout] - Connection timeout (default: 15,000).          // correct
+```
+
+The ban covers `@template` too — declare generic type parameters with the brace form, never bracket-defaults:
+
+```javascript
+@template [TSignedTransaction=unknown]     // wrong
+@template {unknown} TSignedTransaction     // correct
 ```
 
 ---
@@ -122,7 +132,7 @@ async _getFeeEstimator (bundlerUrl) { ... }
 async _getFeeEstimator (bundlerUrl) { ... }
 ```
 
-Same for private properties: `/** @private */` only, nothing else.
+Same for private properties: `/** @private */` only, nothing else. Internal (`@internal`) constants and properties likewise don't need full documentation. And never use company- or team-internal jargon (e.g., "Phase 1") anywhere in documentation — every term must make sense outside the organization.
 
 ---
 
@@ -162,7 +172,7 @@ async _buildInitData (config) { ... }
 
 ### R8. Always provide full JSDoc on overridden methods
 
-Copy the parent's JSDoc on the override (or rewrite it more specifically). `tsc` needs JSDoc on the override for accurate `.d.ts` generation. Make documentation more blockchain-specific when possible — add `@example`, narrow return types, clarify behavior.
+Copy the parent's JSDoc on the override. Keep the superclass description and only append implementation-specific details after it (e.g., "Establishes the connection to the server. Blockbook is a stateless REST API, so clients don't need to call this method.") — never replace the original description. `tsc` needs JSDoc on the override for accurate `.d.ts` generation. Make documentation more blockchain-specific when possible — add `@example`, narrow return types, clarify behavior.
 
 ```javascript
 /**
@@ -194,6 +204,13 @@ export default class BaseClient extends IElectrumClient { ... }
 export default class BaseClient { ... }
 ```
 
+When the interface is generic, `@implements` must supply the concrete type argument, never the bare name:
+
+```javascript
+/** @implements {IWalletAccount} */            // wrong — missing generic argument
+/** @implements {IWalletAccount<Cell>} */      // correct
+```
+
 ---
 
 ## Type Import/Export Rules
@@ -211,6 +228,13 @@ import BaseClient from './transports/client/base-client.js'
 **Correct:**
 ```javascript
 /** @typedef {import('./transports/index.js').IElectrumClient} IElectrumClient */
+```
+
+Import SDK-originating types directly from the SDK package, never through local module files that merely re-export them:
+
+```javascript
+/** @typedef {import('./wallet-account-read-only-evm.js').Authorization} Authorization */   // wrong
+/** @typedef {import('ethers').Authorization} Authorization */                              // correct
 ```
 
 ---
@@ -234,12 +258,17 @@ Define a `@typedef` alias at the top of the file; use the short name in `@param`
 
 ## Type Annotation Rules
 
-### R12. Use `x[]` not `Array<x>` for consistency
+### R12. Canonical type syntax: `x[]` not `Array<x>`; `Record<string, T>` not index signatures
 
 ```javascript
 @returns {Promise<Array<ElectrumUtxo>>}     // wrong
 @returns {Promise<ElectrumUtxo[]>}          // correct
+
+@type {{ [name: string]: ISigner }}         // wrong
+@type {Record<string, ISigner>}             // correct
 ```
+
+Define `@typedef` types as the singular element type and apply `[]` at the usage site (`@param {BaseAssetFilter<T>[]} filter`) — don't bake array-ness into the typedef.
 
 ---
 
@@ -253,6 +282,11 @@ When choosing a type for a property, parameter, or return value, walk this ladde
 4. **Bare `Object`** — **forbidden as a value type** in `@param`, `@property`, `@returns`, `@type`. (`@typedef {Object} Foo` is fine — that's the typedef-kind marker, see R2.)
 
 If you write `{Object}` outside a `@typedef` declaration, you've taken a shortcut. Find the right type.
+
+Two refinements at the extremes of the ladder:
+
+- If even `Pick<>` of an existing type leaves a field union looser than the runtime contract (e.g., `number | bigint` where the method always produces `bigint`), define and export a new ad-hoc typedef with the exact types.
+- If a parameter's shape is genuinely implementation-specific and unknowable at the interface level, type it `{unknown}` — don't borrow a semantically wrong concrete type just because it's importable.
 
 **Violation:**
 ```javascript
@@ -315,13 +349,17 @@ If the implementation can `return null`, the `@returns` type must explicitly inc
 
 ---
 
-### R17. Use `@throws` for error conditions
+### R17. Use `@throws` for error conditions — one tag per distinct condition
 
-Document errors with `@throws`. Use the specific custom error class, not generic `Error`.
+Document errors with `@throws`. Use the specific custom error class, not generic `Error`. Give each distinct failure condition its own `@throws` tag with its own class — never merge conditions into one generic tag.
 
 ```javascript
 @throws {Error} If the configuration is invalid.                                    // wrong
 @throws {ConfigurationError} If the configuration has missing required fields.      // correct
+
+@throws {Error} If no signer exists with that name or the signer doesn't support derivation.   // wrong — merged
+@throws {Error} If a signer name is given but no signer exists with that name.      // correct
+@throws {SignerError} If the signer doesn't support account derivation.             // correct
 ```
 
 ---
@@ -403,7 +441,7 @@ When a method returns an object with multiple properties, define a named `@typed
 
 ### R23. Ensure `.d.ts` types match runtime types
 
-Generated `.d.ts` types must reflect runtime behavior. If a value is `bigint` at runtime, the `.d.ts` must not declare it as `number`.
+Generated `.d.ts` types must reflect runtime behavior. If a value is `bigint` at runtime, the `.d.ts` must not declare it as `number`. When a third-party value's declared type resolves to `any`, verify its actual runtime type before writing it into JSDoc or `.d.ts` — don't guess.
 
 ---
 
@@ -428,21 +466,32 @@ this._viemClients = undefined
 ```
 Define `ViemClients` as a typedef and reference it by name.
 
+Boundaries of the named-typedef rule:
+
+- Never use inline object literals anywhere — including `.d.ts` generic arguments: `extends WdkBaseAssetRegistry<{ id: string; ... }>` → `extends WdkBaseAssetRegistry<TokenAsset>`.
+- Alias primitive unions repeated across many fields: `/** @typedef {string | number} Blockchain */`.
+- But do **not** create a typedef for a single-use options parameter. Document it inline — `@param {Object} [options] - The transaction's options.` plus dotted `@param {boolean} [options.isActivation] - ...` per property (or dotted `@property {Object} [content]` + `@property {boolean} [content.confirmed]` entries inside a typedef) — so every field still gets a description. This is the one sanctioned use of `{Object}` as a value type (see R13).
+
 ---
 
-### R26. Use `undefined` (not `null`) for uninitialized optional/cached properties
+### R26. `undefined` vs `null` convention
+
+- **`undefined`** — uninitialized optional/cached properties, and absent optional values (pass `undefined`, never an empty `{}` placeholder).
+- **`null`** — lookup results when nothing is found (`T | null`, never `T | undefined`), and key-material properties cleared by `dispose()` (type them `Type | null` per the base-class disposal contract).
 
 ```javascript
 /** @protected @type {SomeType | null} */
-this._cachedValue = null               // wrong
+this._cachedValue = null                       // wrong — uninitialized cache is undefined
 
-/** @protected @type {SomeType | undefined} */
-this._cachedValue = undefined          // correct
+@returns {T | undefined} The matching asset, or `undefined` if no asset matches.   // wrong
+@returns {T | null} The matching asset, or `null` if no asset matches the id.      // correct
+
+const providerOpts = config.chainId ? { staticNetwork: true } : {}                 // wrong — use undefined, not {}
 ```
 
 ---
 
-### R27. Use overload-specific param names, not union names
+### R27. Overloads: one `@overload` block per mode, with overload-specific names and `@throws`
 
 When a method has `@overload` JSDoc, each overload's `@param` name should reflect the specific type for that overload — not the implementation's generic union name.
 
@@ -458,11 +507,15 @@ When a method has `@overload` JSDoc, each overload's `@param` name should reflec
 /** @overload @param {WalletAccountEvm} account - An existing account. */
 ```
 
+Document distinct construction/usage modes as separate `@overload` blocks in the first place — never a single union-typed parameter (`{string | Uint8Array | ISigner} seedOrSigner`), even when the implementation is shared. Keep each overload's `@throws` specific to that overload: drop discriminator clauses ("...and index is a number") already implied by its signature.
+
 ---
 
 ### R28. Every documented field needs a meaningful description
 
 `@param`, `@property`, `@returns`, `@throws`, and member descriptions must contain a non-empty, useful sentence that adds information beyond the type and name. Empty descriptions, single-word descriptions that just restate the parameter name, and "the X" tautologies are forbidden.
+
+Descriptions must also be *behaviorally accurate*: state how multiple filter conditions combine (AND vs OR); respect ownership semantics (`dispose` closes only *internal* connections when clients can be injected — say so); never imply an outcome that doesn't hold in every case (e.g., "Omit to use the default signer" when omission also works without one). Every `@returns` tag carries a meaningful text description alongside the type — including on `@protected` methods returning `void`.
 
 If a default exists, include it per R4.
 
@@ -513,7 +566,7 @@ When a type name is built from a multi-word technical term that has established 
 | Typed data | `Typeddata` | `TypedData` |
 | Multi-chain | `Multichain` | `MultiChain` |
 
-When in doubt, search the SDK's published types for the exact casing.
+This applies equally to property and parameter names — `onChainIdentifier`, not `onchainIdentifier`. When in doubt, search the SDK's published types for the exact casing.
 
 ---
 
@@ -545,72 +598,73 @@ async _createSafeAccount (config) { ... }
 
 When the same `Pick` is used in multiple places, lift it to a named typedef.
 
----
-
-## Type Definition Conventions
-
-### TD1. Update `.d.ts` manually after API changes — do not run `npm run build:types`
-
-After modifying public JSDoc, **do not** run `npm run build:types` (`tsc`). Instead, hand-edit the affected `.d.ts` files so they reflect the JSDoc/type changes, and commit the updated type files alongside the source changes. Only touch the declarations that actually changed.
+The same discipline applies to override parameters: a per-call config-override is `Partial<...>` of the specific overridable subset — e.g., `Partial<SponsorshipConfig | PaymasterTokenConfig>` — not `Omit<Config, 'transferMaxFee'>` of the full config. Pick the utility type that expresses exactly what may be overridden.
 
 ---
 
-### TD2. Update `types/index.d.ts` when adding new public types
+### R32. Descriptions state what the component is or does — nothing else
 
-Every new `@typedef` that's part of the public API must appear in `types/index.d.ts`. Add the corresponding declaration manually (see TD1).
+No design rationale, backwards-compatibility or historical notes, meta-commentary on how to access members, restating what a tag already conveys (`@internal` means "not public API" — don't repeat it), or listing fields documented by their own `@property`/`@param` tags. Behavioral prose belongs on the methods exhibiting the behavior, not on `@typedef` declarations. Error-class descriptions say what the error represents, not when it is thrown.
 
----
-
-### TD3. Export new types from `index.js`
-
-New public types must be re-exported from `index.js` so consumers can import them.
-
+**Violation:**
 ```javascript
-// index.js
-export { default as WalletAccountBtc } from './src/wallet-account-btc.js'
-/** @typedef {import('./src/wallet-account-btc.js').GetBalanceResult} GetBalanceResult */
+/**
+ * A minimal, cross-chain signer interface. Chain-specific signers can extend
+ * this contract with additional capabilities (e.g., signTransaction, signPsbt),
+ * which are intentionally kept out of the base to remain chain-agnostic.
+ */
+```
+
+**Correct:**
+```javascript
+/**
+ * A minimal, cross-chain signer interface.
+ */
 ```
 
 ---
 
-### TD4. Re-export parent module types from child modules
+### R33. Flexible input types for numerics and chain identifiers
 
-When a module extends another WDK module's public types, re-export those types from the extending module's `index.js` so consumers don't need a direct dependency on the parent.
+User-facing numeric inputs (amounts, fees, limits) must accept `number | bigint`, and blockchain chain identifiers must accept both string and numeric forms, so callers can pass any valid representation. This applies to inputs only — outputs keep the exact runtime type (R23).
 
----
+**Violation:**
+```javascript
+@property {bigint} [swidgeMaxFee] - The maximum total fee for swidge operations.
+@property {string} chainId - The chain the asset lives on.
+```
 
-### TD5. Export custom error types from both `index.js` and `types/`
-
-Custom error classes must be exported from `index.js` and have corresponding declarations in `types/`. Consumers need to catch and type-check errors.
-
----
-
-### TD6. Exclude internal types from `types/` folder
-
-Types for internal modules (prefixed with `_`, inside `src/internal/`) must not appear in the public `types/` output. Use `tsconfig.json` exclusions or `@internal`.
-
----
-
-### TD7. Interfaces use `interface` in `.d.ts`
-
-JSDoc `@interface` classes must generate `interface` declarations (not `class`) in `.d.ts`.
-
-```typescript
-export class IElectrumClient { ... }            // wrong
-export interface IElectrumClient { ... }        // correct
+**Correct:**
+```javascript
+@property {number | bigint} [swidgeMaxFee] - The maximum total fee for swidge operations.
+@property {string | number} chainId - The chain the asset lives on.
 ```
 
 ---
 
-### TD8. Abstract classes use `abstract class` in `.d.ts`
+### R34. Brackets for omittable params; `{T | undefined}` for non-omittable ones
 
-JSDoc `@abstract` classes must generate `abstract class` declarations.
+Mark trailing optional arguments with brackets (`[param]`), never a `| undefined` union. Conversely, a possibly-undefined positional parameter followed by a required parameter can never be omitted at the call site — type it `{T | undefined}`, not `[param]`.
+
+**Violation:**
+```javascript
+@param {string | string[] | undefined} wallet - The wallet names.        // trailing optional — use brackets
+
+// _isActivatingTransfer (type, value) — value is required
+@param {string} [type] - The transaction's contract type.               // cannot be omitted — not optional
+```
+
+**Correct:**
+```javascript
+@param {string | string[]} [wallet] - The wallet names.
+@param {string | undefined} type - The transaction's contract type.
+```
 
 ---
 
-### TD9. Update `.d.ts` manually after addressing review changes
+### R35. Don't use `@deprecated` to mask a breaking type change
 
-After resolving review feedback that touches JSDoc or type annotations, hand-edit the affected `.d.ts` files (do not run `npm run build:types`) and include the updated declarations in the follow-up commit.
+If methods no longer accept a type, marking the old type `@deprecated` doesn't avoid the break — the methods already reject it. Either add overloads that genuinely still accept the old type, or remove the unsupported type entirely (including its re-exports) and take the break honestly.
 
 ---
 
@@ -621,7 +675,8 @@ After resolving review feedback that touches JSDoc or type annotations, hand-edi
 3. **Visibility** — `@private` only on class members (R5); private members get minimal JSDoc (R6); `@protected` has full annotation (R7).
 4. **Inheritance** — overrides have full JSDoc (R8); `@implements` vs `@extends` (R9); `@abstract`/`@interface` (R19).
 5. **Imports** — `@typedef {import(...)}` not runtime imports (R10); short aliases not inline paths (R11); no unused imports (R24).
-6. **Type annotations** — `x[]` not `Array<x>` (R12); precision ladder (R13); SDK types preferred (R14, R15); discriminated unions (R20); typedef for structured returns (R22); typedef for inline `@type` on properties (R25); `undefined` not `null` for cached props (R26); `Pick<Config>` not `Partial<Config>` (R31).
-7. **Completeness** — meaningful descriptions on every documented field (R28); `| null` when applicable (R16); `@throws` for errors (R17); `@see` for docs (R18).
+6. **Type annotations** — canonical type syntax (R12); precision ladder (R13); SDK types preferred (R14, R15); discriminated unions (R20); typedef for structured returns (R22); typedef for inline `@type` on properties (R25); `undefined` not `null` for cached props (R26); `Pick<Config>` not `Partial<Config>` (R31); flexible numeric/chain-id inputs (R33); brackets vs `| undefined` on positional params (R34).
+7. **Completeness** — meaningful, behaviorally accurate descriptions on every documented field (R28); concise, purposeful descriptions (R32); `| null` when applicable (R16); one `@throws` per condition (R17); `@see` for docs (R18).
 8. **Naming** — no impl-detail prefixes (R29); SDK-aligned casing (R30); overload-specific param names (R27).
-9. **`.d.ts` alignment** — runtime types match (R23); update `.d.ts` manually, never `build:types` (TD1, TD9); public types exported (TD2-TD5); internal excluded (TD6); interface/abstract correct (TD7-TD8); review the `types/` edits for correctness.
+
+> The `.d.ts` maintenance rules (TD1–TD9) live in the companion skill **wdk-review-dts**; run it whenever a change touches `types/`.

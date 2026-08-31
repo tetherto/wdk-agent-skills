@@ -10,7 +10,8 @@ This repository follows the open [Agent Skills](https://agentskills.io/specifica
 |-------|-------------|
 | `wdk` | Tether Wallet Development Kit — build and interact with non-custodial multi-chain wallets |
 | `code-of-conduct` | Code of conduct that contributors and AI coding assistants follow when writing, modifying, or reviewing WDK module code |
-| `wdk-review-types-jsdoc` | Review WDK source files for compliance with established Types & JSDoc conventions |
+| `wdk-review-jsdocs` | Review WDK source files for JSDoc format and type-annotation conventions |
+| `wdk-review-dts` | Review and maintain WDK generated `.d.ts` type definitions |
 | `wdk-review-tests` | Review WDK test suites for compliance with established testing conventions |
 
 ### WDK Capabilities
