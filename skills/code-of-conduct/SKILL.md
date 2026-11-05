@@ -237,7 +237,7 @@ export default class WalletAccountEvm extends WalletAccountReadOnlyEvm {
      *
      * @param {ApproveOptions} options - The approve options.
      * @returns {Promise<TransactionResult>} The transaction's result.
-     * @throws {Error} If trying to approve usdts on ethereum with allowance not equal to zero (due to the usdt allowance reset requirement).
+     * @throws {ValueError} If trying to approve usdts on ethereum with allowance not equal to zero (due to the usdt allowance reset requirement).
      */
     async approve (options) {
         [...]
