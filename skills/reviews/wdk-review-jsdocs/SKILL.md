@@ -358,7 +358,7 @@ Document errors with `@throws`. Use the specific custom error class, not generic
 @throws {ConfigurationError} If the configuration has missing required fields.      // correct
 
 @throws {Error} If no signer exists with that name or the signer doesn't support derivation.   // wrong — merged
-@throws {Error} If a signer name is given but no signer exists with that name.      // correct
+@throws {NoSuchElementError} If a signer name is given but no signer exists with that name.      // correct
 @throws {SignerError} If the signer doesn't support account derivation.             // correct
 ```
 
