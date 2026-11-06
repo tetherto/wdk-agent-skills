@@ -12,6 +12,7 @@ This repository follows the open [Agent Skills](https://agentskills.io/specifica
 | `code-of-conduct` | Code of conduct that contributors and AI coding assistants follow when writing, modifying, or reviewing WDK module code |
 | `wdk-review-jsdocs` | Review WDK source files for JSDoc format and type-annotation conventions |
 | `wdk-review-dts` | Review and maintain WDK generated `.d.ts` type definitions |
+| `wdk-review-errors` | Review WDK wallet and protocol modules for compliance with the `@tetherto/wdk-wallet` error contracts |
 | `wdk-review-tests` | Review WDK test suites for compliance with established testing conventions |
 
 ### WDK Capabilities
