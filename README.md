@@ -1,6 +1,6 @@
 # WDK Agent Skills
 
-[Agent skills](https://agentskills.io) for non-custodial multi-chain wallet operations using the [Tether Wallet Development Kit (WDK)](https://wdk.tether.io/).
+[Agent skills](https://agentskills.io) for writing and reviewing [Tether Wallet Development Kit (WDK)](https://wdk.tether.io/) modules.
 
 This repository follows the open [Agent Skills](https://agentskills.io/specification) format, a simple standard for giving AI agents new capabilities and domain expertise.
 
@@ -8,42 +8,34 @@ This repository follows the open [Agent Skills](https://agentskills.io/specifica
 
 | Skill | Description |
 |-------|-------------|
-| `wdk` | Tether Wallet Development Kit — build and interact with non-custodial multi-chain wallets |
+| `wdk` | Moved to [`tetherto/wdk-docs`](https://github.com/tetherto/wdk-docs/tree/main/skills/wdk) |
 | `code-of-conduct` | Code of conduct that contributors and AI coding assistants follow when writing, modifying, or reviewing WDK module code |
 | `wdk-review-jsdocs` | Review WDK source files for JSDoc format and type-annotation conventions |
 | `wdk-review-dts` | Review and maintain WDK generated `.d.ts` type definitions |
 | `wdk-review-tests` | Review WDK test suites for compliance with established testing conventions |
-
-### WDK Capabilities
-
-The `wdk` skill gives agents the knowledge to:
-
-- **Wallet management** — Create and manage wallets on Bitcoin, EVM chains, Solana, Spark, TON, and TRON
-- **Token transfers** — Send USDt and other tokens across supported chains
-- **DEX swaps** — Execute token swaps via Velora (EVM)
-- **Cross-chain bridging** — Bridge USDt0 across chains via LayerZero
-- **DeFi lending** — Supply, withdraw, borrow, and repay through Aave V3
-- **Fiat on/off ramps** — Buy and sell crypto via MoonPay
+| `wdk-review-module` | Pre-review a wallet or protocol module against the [contribution guide](https://docs.wdk.tether.io/tools/create-wdk-module/) |
 
 ## Installation
 
 ```bash
-npx skills add tetherto/wdk-agent-skills
+npx skills add tetherto/wdk-agent-skills -g \
+  --skill wdk-review-module \
+  --skill wdk-review-jsdocs \
+  --skill wdk-review-dts \
+  --skill wdk-review-tests
 ```
 
 ## Usage
 
-Skills are automatically available once installed. Example prompts:
+Run a review from your module's root. If your agent has no slash commands, ask for the skill by name.
 
-- "Create a new Bitcoin wallet and show me the address"
-- "Send 10 USDt on Ethereum to 0x..."
-- "Swap 50 USDt for ETH on Arbitrum using Velora"
-- "Bridge 100 USDt0 from Ethereum to Arbitrum"
-- "Supply 500 USDt to Aave on Ethereum"
+```text
+/wdk-review-module .
+```
 
 ## Documentation
 
-- **WDK Agent Skills Guide**: [docs.wdk.tether.io/ai/agent-skills](https://docs.wdk.tether.io/ai/agent-skills)
+- **Contribution guide**: [docs.wdk.tether.io/tools/create-wdk-module](https://docs.wdk.tether.io/tools/create-wdk-module/)
 - **Agent Skills Specification**: [agentskills.io](https://agentskills.io)
 
 ## Contributing
